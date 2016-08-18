@@ -47,9 +47,15 @@ export const connect = (query, isLive) => Consumer => {
       if (this.version == version) { return }
 
       this.version = version
-      this.context.horizon.model(query(this.context.horizon))(this.props)
-        .fetch()
-        .subscribe(results => this.setState({ results }))
+      let q = this.context.horizon.model(query(this.context.horizon))(this.props)
+
+      if (isLive) {
+        q = q.watch()
+      } else {
+        q = q.fetch()
+      }
+
+      q.subscribe(results => this.setState({ results }))
     }
   }
 
