@@ -14,32 +14,42 @@ export class Provider extends Component {
 
 Provider.childContextTypes = { horizon: React.PropTypes.any }
 
-export const connect = query => Consumer => {
+let nextVersion = 0
+
+export const connect = (query, isLive) => Consumer => {
+  let version = nextVersion++
+
   class Connection extends Component {
-    componentDidMount () {
-      this.queries = []
+    constructor (props, context) {
+      super(props, context)
 
-      Object.keys(query).forEach(queryName => {
-        let results = query[queryName](this.context.horizon)
-        if (results.fetch) results = results.fetch()
+      this.state = { results: null }
+      this.version = version
 
-        if (results.subscribe) {
-          this.queries.push(results.subscribe(
-            data => this.setState({ [queryName]: data, [queryName + '__loaded']: true }),
-            error => this.setState({ [queryName + '__error']: error })
-          ))
-        } else {
-          this.setState({ [queryName]: results })
-        }
-      })
-    }
+      let q = this.context.horizon.model(query(this.context.horizon))(this.props)
 
-    componentWillUnmount () {
-      this.queries.forEach(q => q.unsubscribe())
+      if (isLive) {
+        q = q.watch()
+      } else {
+        q = q.fetch()
+      }
+
+      q.subscribe(results => this.setState({ results }))
     }
 
     render () {
-      return <Consumer {...this.state} />
+      return <Consumer {...this.state.results} {...this.props} />
+    }
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    Connection.prototype.componentWillUpdate = function componentWillUpdate () {
+      if (this.version == version) { return }
+
+      this.version = version
+      this.context.horizon.model(query(this.context.horizon))(this.props)
+        .fetch()
+        .subscribe(results => this.setState({ results }))
     }
   }
 
@@ -48,4 +58,4 @@ export const connect = query => Consumer => {
   return Connection
 }
 
-export const live = query => hz => query(hz).watch()
+connect.live = query => connect(query, true)
