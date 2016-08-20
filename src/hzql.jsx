@@ -3,7 +3,8 @@ import React, { Component } from 'react'
 export class Provider extends Component {
   getChildContext () {
     return {
-      horizon: this.props.horizon
+      horizon: this.props.horizon,
+      Fiber: this.props.fiber || false
     }
   }
 
@@ -12,7 +13,10 @@ export class Provider extends Component {
   }
 }
 
-Provider.childContextTypes = { horizon: React.PropTypes.any }
+Provider.childContextTypes = {
+  horizon: React.PropTypes.any,
+  Fiber: React.PropTypes.any
+}
 
 let nextVersion = 0
 
@@ -25,7 +29,9 @@ export const connect = (query, isLive) => Consumer => {
 
       this.state = { results: null }
       this.version = version
+    }
 
+    componentWillMount () {
       let q = this.context.horizon.model(query(this.context.horizon))(this.props)
 
       if (isLive) {
@@ -34,7 +40,17 @@ export const connect = (query, isLive) => Consumer => {
         q = q.fetch()
       }
 
-      q.subscribe(results => this.setState({ results }))
+      let fiber
+
+      let sub = q.subscribe(results => {
+        this.setState({ results })
+        if (this.context.Fiber) fiber.run()
+      })
+
+      if (this.context.Fiber) {
+        fiber = this.context.Fiber.current
+        this.context.Fiber.yield()
+      }
     }
 
     render () {
@@ -59,7 +75,10 @@ export const connect = (query, isLive) => Consumer => {
     }
   }
 
-  Connection.contextTypes = { horizon: React.PropTypes.any }
+  Connection.contextTypes = {
+    horizon: React.PropTypes.any,
+    Fiber: React.PropTypes.any
+  }
 
   return Connection
 }
