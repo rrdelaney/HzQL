@@ -54,7 +54,7 @@ export const connect = (query, isLive) => Consumer => {
     }
 
     render () {
-      return <Consumer {...this.state.results} {...this.props} />
+      return <Consumer {...this.state.results} {...this.props} horizon={this.context.horizon} />
     }
   }
 
