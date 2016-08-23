@@ -2,6 +2,14 @@
 
 > Easy querying for Horizon and React
 
+```
+npm install --save hzql
+```
+
+- Easy bindings from Horizon into React
+- Support for Horizon 2
+- Support for server side rendering
+
 HzQL with React colocates your data and components. It requires Horizon 2
 for its new `hz.model` query.
 
@@ -51,6 +59,31 @@ export default connect(query)(App)
 
 To run a live query, use `connect.live` instead of `connect`
 
+## Waiting for Results
+
+If you would prefer for the component to not render at all until the results
+of the query arrive, you can use `connect.await`. This will cause your
+component to always return `null` from `render` until the query is finished.
+
+The watching equivalent of this is `connect.liveAwait`
+
+__Example__
+
+```js
+import React from 'react'
+import { connect } from 'hzql'
+
+const App = props =>
+  <pre>Users: {this.props.users}</pre>
+
+const query = hz => props => ({
+  users: hz('post').order('date')
+})
+
+// This will render to `null` until `hz('posts').order('date')` is retrieved
+export default connect.await(query)(App)
+```
+
 ## Mutations
 
 The horizon instance is passed down to child components, which can perform
@@ -92,3 +125,44 @@ export default connect(App)(hz => props => ({}))
 ```
 
 ## Server side rendering
+
+To render on the server, install `node-fibers` using
+
+```
+npm i -S node-fibers
+```
+
+In your server code, your call to `renderToString` should look something like
+
+```js
+import React from 'react'
+import { renderToString } from 'react-dom/server'
+import Fiber from 'fibers'
+import ws from 'ws'
+import Horizon from '@horizon/client'
+import { Provider } from 'hzql'
+import App from './App'
+
+// Give Horizon a websocket library to use
+global.WebSocket = ws
+
+let hz = new Horizon({ host: 'localhost:8181' })
+
+// Wrap your call to `renderToString` with a Fiber
+Fiber(() => {
+
+  // Pass the horizon instance into provider like normal
+  // Make sure to pass the `Fiber` library into `Provider` so it
+  // knows to use it
+  let html = renderToString(<Provider horizon={hz} fiber={Fiber}>
+    <App />
+  </Provider>)
+
+  // Do something with `html`, e.x. `ctx.body = html`
+
+  // Make sure to disconnect or the server won't stop
+  hz.disconnect()
+}).run()
+
+// Run the Fiber
+```
