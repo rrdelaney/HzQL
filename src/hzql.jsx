@@ -20,7 +20,7 @@ Provider.childContextTypes = {
 
 let nextVersion = 0
 
-export const connect = (query, isLive) => Consumer => {
+export const connect = (query, shouldWait, isLive) => Consumer => {
   let version = nextVersion++
 
   class Connection extends Component {
@@ -54,7 +54,9 @@ export const connect = (query, isLive) => Consumer => {
     }
 
     render () {
-      return <Consumer {...this.state.results} {...this.props} horizon={this.context.horizon} />
+      return shouldWait && !this.state.results
+        ? null
+        : <Consumer {...this.state.results} {...this.props} horizon={this.context.horizon} />
     }
   }
 
@@ -83,4 +85,6 @@ export const connect = (query, isLive) => Consumer => {
   return Connection
 }
 
-connect.live = query => connect(query, true)
+connect.live = query => connect(query, false, true)
+connect.await = query => connect(query, true, false)
+connect.liveAwait = query => connect(query, true, true)
