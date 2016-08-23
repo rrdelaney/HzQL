@@ -1,6 +1,6 @@
 # HzQL
 
-> Easy querying for Horizon and React
+> Data Fetching for React Using Horizon 2
 
 ```
 npm install --save hzql
