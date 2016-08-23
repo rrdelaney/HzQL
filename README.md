@@ -48,7 +48,7 @@ import React from 'react'
 import { connect } from 'hzql'
 
 const App = props =>
-  <pre>Users: {this.props.users}</pre>
+  <pre>Users: {<pre>Users: {props.users}</pre>props.users}</pre>
 
 const query = hz => props => ({
   users: hz('post').order('date')
@@ -58,6 +58,21 @@ export default connect(query)(App)
 ```
 
 To run a live query, use `connect.live` instead of `connect`
+Using the new decorator syntax:
+
+```js
+import React from 'react'
+import { connect } from 'hzql'
+
+@connect.live(hz => props => ({
+  users: hz('post').order('date')
+}))
+export default class App {
+  render () {
+    return <pre>Users: {this.props.users}</pre>
+  }
+}
+```
 
 ## Waiting for Results
 
