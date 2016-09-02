@@ -1,6 +1,6 @@
 # HzQL
 
-> Easy querying for Horizon and React
+> Data Fetching for React Using Horizon 2
 
 ```
 npm install --save hzql
@@ -12,6 +12,38 @@ npm install --save hzql
 
 HzQL with React colocates your data and components. It requires Horizon 2
 for its new `hz.model` query.
+
+## Example
+
+```js
+import React, { Component } from 'react'
+import { render } from 'react-dom'
+import Horizon from '@horizon/client'
+import { Provider, connect } from 'hzql'
+
+const horizon = new Horizon
+
+@connect(hz => props => ({
+  users: hz('users'),
+  posts: hz('posts').order('date')
+}))
+class UserPosts extends Component {
+  render () {
+    if (!this.props.users || !this.props.posts) return <span>Loading...</span>
+    
+    return <div>
+      <h1>Users:</h1>
+      {this.props.users.map(u => <li key={u.id}>u.name</li>)}
+      <h1>Posts:</h1>
+      {this.props.posts.map(p => <li key={p.id}>p.title</li>)}
+    </div>
+  }
+}
+
+render(<Provider horizon={horizon}>
+  <UserPosts />
+</Provider>, document.getElementById('root'))
+```
 
 ## Setting up HzQL
 
