@@ -1,6 +1,14 @@
 import React, { Component } from 'react'
+import { serialize, deserialize } from '@horizon/client/lib/serialization'
 
 export class Provider extends Component {
+  constructor (props) {
+    super(props)
+
+    this.props.horizon.$$__hzql_cache = this.props.cache ? deserialize(this.props.cache) : {}
+    this.props.horizon.$$__hzql_cache_string = ''
+  }
+
   getChildContext () {
     return {
       horizon: this.props.horizon,
@@ -29,10 +37,17 @@ export const connect = (query, shouldWait, isLive) => Consumer => {
 
       this.state = { results: null }
       this.version = version
+      this.subscription = undefined
     }
 
     componentWillMount () {
       let q = this.context.horizon.model(query(this.context.horizon))(this.props)
+
+      let queryString = q.toString()
+
+      if (this.context.horizon.$$__hzql_cache[queryString]) {
+        this.setState({ results: this.context.horizon.$$__hzql_cache[queryString] })
+      }
 
       if (isLive) {
         q = q.watch()
@@ -44,13 +59,25 @@ export const connect = (query, shouldWait, isLive) => Consumer => {
 
       let sub = q.subscribe(results => {
         this.setState({ results })
-        if (this.context.Fiber) fiber.run()
+
+        if (this.context.Fiber) {
+          this.context.horizon.$$__hzql_cache[queryString] = results
+          this.context.horizon.$$__hzql_cache_string = serialize(this.context.horizon.$$__hzql_cache)
+
+          fiber.run()
+        }
       })
+
+      this.subscription = sub
 
       if (this.context.Fiber) {
         fiber = this.context.Fiber.current
         this.context.Fiber.yield()
       }
+    }
+
+    componentWillUnmount () {
+      this.subscription.unsubscribe()
     }
 
     render () {
