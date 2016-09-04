@@ -188,28 +188,46 @@ import Fiber from 'fibers'
 import ws from 'ws'
 import Horizon from '@horizon/client'
 import { Provider } from 'hzql'
+import express from 'express'
 import App from './App'
 
 // Give Horizon a websocket library to use
 global.WebSocket = ws
+const app = express()
 
-let hz = new Horizon({ host: 'localhost:8181' })
+app.get('/', () => {
+  let hz = new Horizon({ host: 'localhost:8181' })
+  
+  // Wrap your call to `renderToString` with a Fiber
+  Fiber(() => {
+  
+    // Pass the horizon instance into provider like normal
+    // Make sure to pass the `Fiber` library into `Provider` so it
+    // knows to use it
+    let html = renderToString(<Provider horizon={hz} fiber={Fiber}>
+      <App />
+    </Provider>)
+    
+    let cache = hz.$$__hzql_cache_string
 
-// Wrap your call to `renderToString` with a Fiber
-Fiber(() => {
+    res.status(200).send(`
+      <html>
+        <head>
+          <script>window.$HZ_CACHE = ${JSON.stringify(cache)}</script>
+        </head>
+        <body>
+          <div id="root">${html}</div>
+        </body>
+      </html>
+    `)
+    
+    // On the client, create your provider component like <Provider horizon={horizon} cache={window.$HZ_CACHE}>
+  
+    // Make sure to disconnect or the server won't stop
+    hz.disconnect()
+  }).run()
+  // Run the Fiber
+})
 
-  // Pass the horizon instance into provider like normal
-  // Make sure to pass the `Fiber` library into `Provider` so it
-  // knows to use it
-  let html = renderToString(<Provider horizon={hz} fiber={Fiber}>
-    <App />
-  </Provider>)
-
-  // Do something with `html`, e.x. `ctx.body = html`
-
-  // Make sure to disconnect or the server won't stop
-  hz.disconnect()
-}).run()
-
-// Run the Fiber
+app.listen()
 ```
