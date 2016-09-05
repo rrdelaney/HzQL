@@ -1,11 +1,8 @@
 import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
-import { createDevTools } from './devTools'
-import { Provider, connect, live } from './hzql'
+import { Provider, connect } from './hzql'
 
 let root = document.getElementById('root')
-
-let DevTools = createDevTools(horizon)
 
 class RawApp extends Component {
   constructor (props) {
@@ -42,7 +39,7 @@ class RawApp extends Component {
 }
 
 const App = connect({
-  posts: live(_ => _('posts').order('time').limit(5)),
+  posts: _ => _('posts').order('time').limit(5),
   submitPost: _ => message => _('posts').insert({ message, time: new Date })
 })(RawApp)
 
@@ -50,5 +47,4 @@ ReactDOM.render(<div>
   <Provider horizon={horizon}>
     <App />
   </Provider>
-  <DevTools />
 </div>, root)

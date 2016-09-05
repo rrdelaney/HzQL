@@ -41,6 +41,8 @@ export const connect = (query, shouldWait, isLive) => Consumer => {
     }
 
     componentWillMount () {
+      if (!query) return
+
       let q = this.context.horizon.model(query(this.context.horizon))(this.props)
 
       let queryString = q.toString()
@@ -77,6 +79,8 @@ export const connect = (query, shouldWait, isLive) => Consumer => {
     }
 
     componentWillUnmount () {
+      if (!query) return
+
       this.subscription.unsubscribe()
     }
 
@@ -89,7 +93,8 @@ export const connect = (query, shouldWait, isLive) => Consumer => {
 
   if (process.env.NODE_ENV !== 'production') {
     Connection.prototype.componentWillUpdate = function componentWillUpdate () {
-      if (this.version == version) { return }
+      if (!query) return
+      if (this.version == version) return
 
       this.version = version
       let q = this.context.horizon.model(query(this.context.horizon))(this.props)
