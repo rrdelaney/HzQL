@@ -1,6 +1,6 @@
 {
   "name": "hzql",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Easy querying for Horizon and React",
   "main": "index.js",
   "scripts": {
